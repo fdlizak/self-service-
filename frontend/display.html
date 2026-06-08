@@ -1,0 +1,290 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <title>Display Antrian - Toko Emas Mitra Jaya</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        :root {
+            --primary-gold: #D4AF37;
+            --dark-gold: #B8860B;
+            --light-gold: #FFD700;
+            --dark-bg: #1a1a1a;
+            --secondary-dark: #2d2d2d;
+            --white: #ffffff;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: var(--dark-bg);
+            color: var(--white);
+            width: 100%;
+            height: 100vh;
+            overflow: hidden;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .display-container {
+            width: 100%;
+            height: 100%;
+            display: flex;
+            flex-direction: column;
+            background: linear-gradient(135deg, var(--dark-bg) 0%, var(--secondary-dark) 100%);
+        }
+
+        .display-header {
+            background: linear-gradient(135deg, var(--primary-gold) 0%, var(--dark-gold) 100%);
+            color: var(--dark-bg);
+            padding: 30px;
+            text-align: center;
+            font-size: 28px;
+            font-weight: 700;
+            letter-spacing: 2px;
+            border-bottom: 4px solid var(--dark-bg);
+        }
+
+        .display-content {
+            flex: 1;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 40px;
+        }
+
+        .queue-display {
+            text-align: center;
+            width: 100%;
+        }
+
+        .queue-label {
+            font-size: 36px;
+            color: var(--primary-gold);
+            margin-bottom: 30px;
+            letter-spacing: 2px;
+            text-transform: uppercase;
+        }
+
+        .current-queue {
+            font-size: 200px;
+            font-weight: 700;
+            color: var(--primary-gold);
+            text-shadow: 0 4px 20px rgba(212, 175, 55, 0.5);
+            animation: pulse 1s ease-in-out infinite;
+            line-height: 1;
+            margin-bottom: 40px;
+        }
+
+        @keyframes pulse {
+            0%, 100% {
+                opacity: 1;
+                text-shadow: 0 4px 20px rgba(212, 175, 55, 0.5);
+            }
+            50% {
+                opacity: 0.8;
+                text-shadow: 0 4px 40px rgba(212, 175, 55, 0.8);
+            }
+        }
+
+        .queue-status {
+            font-size: 36px;
+            color: var(--white);
+            margin-bottom: 30px;
+            letter-spacing: 1px;
+        }
+
+        .queue-info {
+            background: var(--secondary-dark);
+            padding: 30px;
+            border-radius: 12px;
+            border: 3px solid var(--primary-gold);
+            font-size: 24px;
+            margin-top: 40px;
+        }
+
+        .no-queue {
+            font-size: 60px;
+            color: #999;
+            animation: blink 1.5s ease-in-out infinite;
+        }
+
+        @keyframes blink {
+            0%, 49%, 100% {
+                opacity: 1;
+            }
+            50%, 99% {
+                opacity: 0.5;
+            }
+        }
+
+        .queue-list {
+            position: absolute;
+            bottom: 30px;
+            left: 30px;
+            right: 30px;
+            background: rgba(0, 0, 0, 0.5);
+            padding: 20px;
+            border-radius: 8px;
+            border: 2px solid var(--primary-gold);
+        }
+
+        .queue-list-title {
+            font-size: 18px;
+            color: var(--primary-gold);
+            margin-bottom: 15px;
+            font-weight: 700;
+            text-transform: uppercase;
+        }
+
+        .queue-list-items {
+            display: flex;
+            gap: 15px;
+            flex-wrap: wrap;
+            justify-content: center;
+        }
+
+        .queue-list-item {
+            background: var(--dark-bg);
+            padding: 12px 20px;
+            border-radius: 6px;
+            border: 2px solid var(--primary-gold);
+            font-size: 18px;
+            font-weight: 600;
+            min-width: 80px;
+            text-align: center;
+        }
+
+        .queue-list-item.waiting {
+            opacity: 0.6;
+        }
+
+        .clock {
+            position: absolute;
+            top: 30px;
+            right: 30px;
+            font-size: 32px;
+            color: var(--primary-gold);
+            font-weight: 700;
+            letter-spacing: 2px;
+        }
+    </style>
+</head>
+<body>
+    <div class="display-container">
+        <div class="display-header">
+            🏆 TOKO EMAS MITRA JAYA
+        </div>
+
+        <div class="clock" id="current-time"></div>
+
+        <div class="display-content">
+            <div class="queue-display">
+                <div class="queue-label">Nomor Antrian</div>
+                <div class="current-queue" id="current-queue">-</div>
+                <div class="queue-status" id="queue-status">MENUNGGU PELANGGAN</div>
+                <div class="queue-info" id="queue-info">
+                    <p>Silakan tunggu nomor Anda dipanggil</p>
+                </div>
+            </div>
+        </div>
+
+        <div class="queue-list">
+            <div class="queue-list-title">📋 ANTRIAN BERIKUTNYA</div>
+            <div class="queue-list-items" id="queue-list-items">
+                <div class="queue-list-item waiting">A001</div>
+                <div class="queue-list-item waiting">A002</div>
+                <div class="queue-list-item waiting">A003</div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const API_BASE_URL = 'http://localhost:3000/api';
+
+        class QueueDisplay {
+            constructor() {
+                this.init();
+            }
+
+            init() {
+                this.updateClock();
+                this.loadCurrentQueue();
+                this.loadQueueList();
+                
+                setInterval(() => this.updateClock(), 1000);
+                setInterval(() => this.loadCurrentQueue(), 3000);
+                setInterval(() => this.loadQueueList(), 3000);
+            }
+
+            updateClock() {
+                const now = new Date();
+                const time = now.toLocaleTimeString('id-ID', { hour12: false });
+                const date = now.toLocaleDateString('id-ID', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
+                document.getElementById('current-time').innerHTML = `${time}<br><span style="font-size: 14px;">${date}</span>`;
+            }
+
+            async loadCurrentQueue() {
+                try {
+                    const response = await fetch(`${API_BASE_URL}/queue/current`);
+                    const result = await response.json();
+
+                    if (result.success && result.data) {
+                        const queue = result.data;
+                        document.getElementById('current-queue').textContent = queue.queue_number;
+                        
+                        const statusMap = {
+                            'calling': '🎯 NOMOR ANDA DIPANGGIL',
+                            'processing': '⏳ SEDANG DIPROSES',
+                            'completed': '✅ SELESAI',
+                            'waiting': '⏳ MOHON TUNGGU'
+                        };
+                        
+                        document.getElementById('queue-status').textContent = statusMap[queue.status] || 'MEMPROSES';
+                    } else {
+                        document.getElementById('current-queue').innerHTML = '<span class="no-queue">-</span>';
+                        document.getElementById('queue-status').textContent = 'BELUM ADA ANTRIAN';
+                    }
+                } catch (error) {
+                    console.error('Error loading current queue:', error);
+                }
+            }
+
+            async loadQueueList() {
+                try {
+                    const response = await fetch(`${API_BASE_URL}/queue`);
+                    const result = await response.json();
+
+                    if (result.success && result.data) {
+                        const queues = result.data
+                            .filter(q => ['waiting', 'calling'].includes(q.status))
+                            .sort((a, b) => a.position - b.position)
+                            .slice(0, 10);
+
+                        const currentQueue = result.data.find(q => q.status === 'calling');
+                        const queueListHTML = queues.map(q => {
+                            const isWaiting = q.status === 'waiting' && !currentQueue;
+                            return `<div class="queue-list-item ${isWaiting ? 'waiting' : ''}">${q.queue_number}</div>`;
+                        }).join('');
+
+                        document.getElementById('queue-list-items').innerHTML = queueListHTML || '<div class="queue-list-item waiting">Tidak ada antrian</div>';
+                    }
+                } catch (error) {
+                    console.error('Error loading queue list:', error);
+                }
+            }
+        }
+
+        // Initialize display
+        document.addEventListener('DOMContentLoaded', () => {
+            new QueueDisplay();
+        });
+    </script>
+</body>
+</html>

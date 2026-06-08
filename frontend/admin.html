@@ -1,0 +1,223 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dashboard Admin - Toko Emas Mitra Jaya</title>
+    <link rel="stylesheet" href="css/style.css">
+    <link rel="stylesheet" href="css/admin.css">
+</head>
+<body>
+    <div class="admin-container">
+        <!-- Sidebar -->
+        <div class="sidebar">
+            <div class="sidebar-logo">
+                <h2>💎 ADMIN</h2>
+            </div>
+            <div class="sidebar-menu">
+                <div class="menu-item active" onclick="adminApp.showPage('dashboard')">📊 Dashboard</div>
+                <div class="menu-item" onclick="adminApp.showPage('queue')">📋 Kelola Antrian</div>
+                <div class="menu-item" onclick="adminApp.showPage('products')">🏆 Kelola Produk</div>
+                <div class="menu-item" onclick="adminApp.showPage('users')">👥 Admin Users</div>
+            </div>
+            <div class="sidebar-footer">
+                <button class="btn btn-danger btn-sm" onclick="adminApp.logout()">Logout</button>
+            </div>
+        </div>
+
+        <!-- Main Content -->
+        <div class="main-content">
+            <div class="top-bar">
+                <h1 id="page-title">Dashboard</h1>
+                <div class="user-info">
+                    <span>Selamat datang, <strong id="user-name"></strong></span>
+                    <span id="current-time"></span>
+                </div>
+            </div>
+
+            <div class="content-area">
+                <!-- Dashboard Page -->
+                <div id="dashboard-page">
+                    <h2>Statistik Hari Ini</h2>
+                    <div class="stats-grid">
+                        <div class="stat-card">
+                            <div class="stat-label">Total Pesanan</div>
+                            <div class="stat-value" id="stat-total-orders">0</div>
+                        </div>
+                        <div class="stat-card">
+                            <div class="stat-label">Pendapatan</div>
+                            <div class="stat-value" id="stat-revenue">Rp 0</div>
+                        </div>
+                        <div class="stat-card">
+                            <div class="stat-label">Antrian Menunggu</div>
+                            <div class="stat-value" id="stat-waiting">0</div>
+                        </div>
+                        <div class="stat-card">
+                            <div class="stat-label">Selesai</div>
+                            <div class="stat-value" id="stat-completed">0</div>
+                        </div>
+                    </div>
+
+                    <div class="queue-container">
+                        <div class="queue-section">
+                            <div class="queue-title">📋 Antrian Menunggu</div>
+                            <div class="queue-list" id="waiting-queue"></div>
+                        </div>
+                        <div class="queue-section">
+                            <div class="queue-title">✓ Antrian Selesai</div>
+                            <div class="queue-list" id="completed-queue"></div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Queue Management Page -->
+                <div id="queue-page" style="display: none;">
+                    <h2>Kelola Antrian</h2>
+                    <div style="margin-bottom: 20px;">
+                        <button class="btn btn-primary btn-large" onclick="adminApp.callNextQueue()">
+                            📢 PANGGIL ANTRIAN BERIKUTNYA
+                        </button>
+                    </div>
+                    <div style="background: var(--secondary-dark); padding: 20px; border-radius: 8px; margin-bottom: 20px;">
+                        <h3>Antrian Sedang Dipanggil</h3>
+                        <div id="current-queue" style="color: var(--white); font-size: 28px; margin-top: 10px;">
+                            -
+                        </div>
+                    </div>
+                    <h3 style="margin-top: 30px;">Daftar Antrian</h3>
+                    <table class="products-table" style="margin-top: 20px;">
+                        <thead>
+                            <tr>
+                                <th>Posisi</th>
+                                <th>Nomor Antrian</th>
+                                <th>Pelanggan</th>
+                                <th>Status</th>
+                                <th>Aksi</th>
+                            </tr>
+                        </thead>
+                        <tbody id="queue-table-body">
+                        </tbody>
+                    </table>
+                </div>
+
+                <!-- Products Management Page -->
+                <div id="products-page" style="display: none;">
+                    <h2>Kelola Produk</h2>
+                    <div style="margin-bottom: 20px;">
+                        <button class="btn btn-primary btn-large" onclick="adminApp.showAddProductModal()">
+                            + TAMBAH PRODUK
+                        </button>
+                    </div>
+                    <table class="products-table">
+                        <thead>
+                            <tr>
+                                <th>Nama Produk</th>
+                                <th>Kategori</th>
+                                <th>Kadar</th>
+                                <th>Berat</th>
+                                <th>Harga</th>
+                                <th>Status</th>
+                                <th>Aksi</th>
+                            </tr>
+                        </thead>
+                        <tbody id="products-table-body">
+                        </tbody>
+                    </table>
+                </div>
+
+                <!-- Users Management Page -->
+                <div id="users-page" style="display: none;">
+                    <h2>Admin Users</h2>
+                    <div style="margin-bottom: 20px;">
+                        <button class="btn btn-primary btn-large" onclick="adminApp.showAddUserModal()">
+                            + TAMBAH ADMIN
+                        </button>
+                    </div>
+                    <table class="products-table">
+                        <thead>
+                            <tr>
+                                <th>Username</th>
+                                <th>Nama Lengkap</th>
+                                <th>Email</th>
+                                <th>Role</th>
+                                <th>Status</th>
+                            </tr>
+                        </thead>
+                        <tbody id="users-table-body">
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Add Product Modal -->
+    <div id="add-product-modal" class="modal-overlay">
+        <div class="modal-dialog">
+            <button class="modal-close" onclick="adminApp.closeModal('add-product-modal')">×</button>
+            <div class="modal-header">Tambah Produk Baru</div>
+            <form onsubmit="adminApp.addProduct(event)">
+                <div class="form-group">
+                    <label>Nama Produk *</label>
+                    <input type="text" id="product-name" required>
+                </div>
+                <div class="form-group">
+                    <label>Kategori *</label>
+                    <select id="product-category" required></select>
+                </div>
+                <div class="form-group">
+                    <label>Deskripsi</label>
+                    <textarea id="product-description" rows="3"></textarea>
+                </div>
+                <div class="form-group">
+                    <label>Berat (gram) *</label>
+                    <input type="number" id="product-weight" step="0.1" required>
+                </div>
+                <div class="form-group">
+                    <label>Kadar Emas *</label>
+                    <select id="product-karat" required>
+                        <option>24K</option>
+                        <option>22K</option>
+                        <option>18K</option>
+                        <option>14K</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label>Harga (Rp) *</label>
+                    <input type="number" id="product-price" required>
+                </div>
+                <button type="submit" class="btn btn-primary btn-large" style="width: 100%;">Simpan Produk</button>
+            </form>
+        </div>
+    </div>
+
+    <!-- Add User Modal -->
+    <div id="add-user-modal" class="modal-overlay">
+        <div class="modal-dialog">
+            <button class="modal-close" onclick="adminApp.closeModal('add-user-modal')">×</button>
+            <div class="modal-header">Tambah Admin User</div>
+            <form onsubmit="adminApp.addUser(event)">
+                <div class="form-group">
+                    <label>Username *</label>
+                    <input type="text" id="user-username" required>
+                </div>
+                <div class="form-group">
+                    <label>Password *</label>
+                    <input type="password" id="user-password" required>
+                </div>
+                <div class="form-group">
+                    <label>Nama Lengkap</label>
+                    <input type="text" id="user-fullname">
+                </div>
+                <div class="form-group">
+                    <label>Email</label>
+                    <input type="email" id="user-email">
+                </div>
+                <button type="submit" class="btn btn-primary btn-large" style="width: 100%;">Tambah User</button>
+            </form>
+        </div>
+    </div>
+
+    <script src="js/admin.js"></script>
+</body>
+</html>
